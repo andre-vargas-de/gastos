@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Gasto Compartido</title>
+<link rel="icon" href="data:,">
+<meta name="theme-color" content="#0F1310">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Gastos">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap');
+
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: #0F1310;
+    color: #E8E4D9;
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
+  }
+  ::selection { background: #C9A876; color: #0F1310; }
+
+  .page { max-width: 560px; margin: 0 auto; padding: 20px 16px 60px; }
+
+  .section-tabs {
+    display: flex; gap: 4px; background: #12160F; border: 1px solid #22261F;
+    border-radius: 12px; padding: 4px; margin-bottom: 18px;
+  }
+  .section-tab {
+    flex: 1; padding: 9px 0; border-radius: 9px; border: none; background: transparent;
+    color: #8B8578; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit;
+  }
+  .section-tab.active { background: #1E2418; color: #C9A876; }
+
+  header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 18px; gap: 12px; }
+  h1 { font-family: 'Fraunces', serif; font-weight: 600; font-size: 28px; margin: 0; letter-spacing: -0.01em; }
+  .refresh-btn {
+    display: flex; align-items: center; gap: 6px; background: #171B16; color: #C9A876;
+    border: 1px solid #2A2E28; border-radius: 10px; padding: 9px 12px; font-size: 12.5px;
+    font-weight: 600; cursor: pointer; white-space: nowrap; font-family: inherit;
+  }
+  .refresh-btn:active { transform: scale(0.97); }
+  .refresh-btn svg { transition: transform 0.5s ease; }
+  .refresh-btn.spinning svg { animation: spin 0.7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .sync-strip { display: flex; gap: 8px; margin-bottom: 16px; font-size: 11.5px; color: #6B6A5F; flex-wrap: wrap; }
+  .sync-pill { display: flex; align-items: center; gap: 5px; background: #12160F; border: 1px solid #22261F; border-radius: 999px; padding: 5px 10px; }
+  .sync-dot { width: 6px; height: 6px; border-radius: 50%; background: #6B9B7A; flex-shrink: 0; }
+  .sync-dot.off { background: #5A5648; }
+  .sync-updated { margin-left: auto; opacity: 0.8; }
+
+  .tabs { display: flex; gap: 8px; margin-bottom: 18px; overflow-x: auto; }
+  .tab-btn {
+    display: flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 999px;
+    border: 1px solid #2A2E28; font-size: 13px; font-weight: 500; cursor: pointer;
+    background: transparent; color: #8B8578; white-space: nowrap; font-family: inherit;
+  }
+  .tab-btn.active { background: rgba(201,168,118,0.13); color: #C9A876; border-color: rgba(201,168,118,0.4); }
+  .tab-btn.person-alvaro.active { background: rgba(79,209,197,0.13); color: #4FD1C5; border-color: rgba(79,209,197,0.4); }
+  .tab-btn.person-camila.active { background: rgba(244,114,182,0.13); color: #F472B6; border-color: rgba(244,114,182,0.4); }
+
+  .balance-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 24px; }
+  .balance-card { background: #171B16; border: 1px solid; border-radius: 14px; padding: 14px 14px 12px; }
+  .balance-top { display: flex; align-items: center; gap: 6px; margin-bottom: 10px; }
+  .bank-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .bank-label { font-size: 12px; color: #8B8578; font-weight: 500; }
+  .balance-amount { font-family: 'IBM Plex Mono', monospace; font-size: 19px; font-weight: 500; color: #E8E4D9; margin-bottom: 4px; }
+  .balance-sub { font-size: 11.5px; color: #6B6A5F; }
+  .balance-sub b { color: #E8E4D9; font-weight: 500; }
+
+  .total-strip {
+    background: linear-gradient(135deg, #1B2318, #171B16); border: 1px solid #2E3A28;
+    border-radius: 14px; padding: 16px 18px; margin-bottom: 24px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .total-strip .label { font-size: 12px; color: #8B8578; margin-bottom: 3px; }
+  .total-strip .amount { font-family: 'Fraunces', serif; font-size: 24px; font-weight: 600; color: #C9A876; }
+
+  .section { margin-bottom: 26px; }
+  .section-title { font-size: 12px; font-weight: 600; color: #8B8578; letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 12px; }
+
+  .cat-row { margin-bottom: 12px; }
+  .cat-label-row { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 13.5px; }
+  .cat-amt { font-family: 'IBM Plex Mono', monospace; color: #C9A876; font-size: 13px; }
+  .cat-bar-bg { height: 6px; background: #1E2219; border-radius: 4px; overflow: hidden; }
+  .cat-bar-fill { height: 100%; background: linear-gradient(90deg, #6B9B7A, #C9A876); border-radius: 4px; }
+
+  .empty { padding: 32px 16px; text-align: center; color: #6B6A5F; font-size: 13.5px; border: 1px dashed #2A2E28; border-radius: 12px; line-height: 1.5; }
+
+  .list { display: flex; flex-direction: column; gap: 8px; }
+  .row { display: flex; align-items: flex-start; gap: 10px; background: #171B16; border: 1px solid #22261F; border-radius: 12px; padding: 12px; }
+  .row-icon { width: 32px; height: 32px; border-radius: 9px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 14px; }
+  .row-icon.credito { transform: rotate(180deg); }
+  .row-main { flex: 1; min-width: 0; }
+  .row-top { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+  .row-note { font-size: 13.5px; color: #E8E4D9; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .row-amount { font-family: 'IBM Plex Mono', monospace; font-size: 13.5px; color: #E8756C; flex-shrink: 0; }
+  .row-amount.credito { color: #6B9B7A; }
+  .row-bottom { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .pill { font-size: 10.5px; padding: 2px 8px; border-radius: 999px; border: 1px solid; font-weight: 500; }
+  .pill-alvaro { color: #4FD1C5; border-color: rgba(79,209,197,0.4); }
+  .pill-camila { color: #F472B6; border-color: rgba(244,114,182,0.4); }
+  .pill-muted { font-size: 10.5px; padding: 2px 8px; border-radius: 999px; border: 1px solid #2A2E28; color: #6B6A5F; }
+  .row-date { font-size: 10.5px; color: #565549; margin-left: auto; }
+
+  .footer-note { text-align: center; font-size: 11px; color: #4A4940; margin-top: 30px; line-height: 1.6; }
+
+  .loading, .error-box { padding: 60px 20px; text-align: center; color: #6B6A5F; font-size: 13.5px; }
+  .error-box { color: #E8756C; }
+
+  @media (prefers-reduced-motion: reduce) { .refresh-btn.spinning svg { animation: none; } }
+</style>
+</head>
+<body>
+<div class="page" id="app">
+  <div class="loading">Cargando gastos…</div>
+</div>
+
+<script>
+/* ======================= CONFIGURACIÓN ======================= */
+// Link CSV publicado de la Google Sheet (Archivo > Compartir > Publicar en la Web > CSV), pestaña "Gastos"
+const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQveHGhs8QkZ5tNmljttm3rKZzRJsrqJfa7NFvSdEpLAt6feFYD6e9cderGCDct_et5e6P8vHFF-Rwt/pub?gid=1571806970&single=true&output=csv";
+
+// SALDOS REALES ACTUALES de cada cuenta — estos son los que tú confirmás manualmente
+// (no se calculan restando gastos; son el número real que ves en tu app bancaria).
+// Edítalos aquí cuando quieras actualizar el saldo real.
+const SALDOS_REALES = {
+  "Unión": 5721.57,
+  "BISA": 41.89,
+};
+const SALDOS_FECHA = "12/08/2026"; // fecha de referencia de estos saldos, ajústala cuando actualices los números de arriba
+
+const BANK_META = {
+  "BISA":  { label: "Banco BISA",  color: "#FFD400" },
+  "Unión": { label: "Banco Unión", color: "#F2A900" },
+  "Union": { label: "Banco Unión", color: "#F2A900" },
+};
+const PEOPLE = ["Andre", "Camila"];
+const PERSON_CLASS = { "Andre": "alvaro", "Camila": "camila" };
+// Camila solo opera con Banco Unión.
+const PERSON_BANKS = { "Andre": ["BISA", "Unión"], "Camila": ["Unión"] };
+
+let currentView = "shared";
+let expenses = [];
+let lastUpdated = null;
+
+/* ======================= UTILIDADES ======================= */
+function fmtBs(n) {
+  return "Bs " + Number(n).toLocaleString("es-BO", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+function fmtDate(d) {
+  if (!(d instanceof Date) || isNaN(d)) return "";
+  return d.toLocaleDateString("es-BO", { day: "2-digit", month: "short" });
+}
+function parseFechaTransaccion(str) {
+  if (!str) return null;
+  const m = str.match(/(\d{2})\/(\d{2})\/(\d{4})(?:\s+(\d{2}):(\d{2}):(\d{2}))?/);
+  if (!m) return new Date(str);
+  const [, dd, mm, yyyy, hh = "00", mi = "00", ss = "00"] = m;
+  return new Date(`${yyyy}-${mm}-${dd}T${hh}:${mi}:${ss}`);
+}
+
+function parseCSV(text) {
+  const rows = [];
+  let row = [], field = "", inQuotes = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i], next = text[i + 1];
+    if (inQuotes) {
+      if (c === '"' && next === '"') { field += '"'; i++; }
+      else if (c === '"') { inQuotes = false; }
+      else { field += c; }
+    } else {
+      if (c === '"') inQuotes = true;
+      else if (c === ',') { row.push(field); field = ""; }
+      else if (c === '\n' || c === '\r') {
+        if (c === '\r' && next === '\n') i++;
+        row.push(field); field = "";
+        if (row.length > 1 || row[0] !== "") rows.push(row);
+        row = [];
+      } else field += c;
+    }
+  }
+  if (field !== "" || row.length) { row.push(field); rows.push(row); }
+  return rows;
+}
+
+function rowsToExpenses(rows) {
+  // Encabezados esperados: Registrado el | Fecha transacción | Mes | Persona | Banco | Tipo | Monto (Bs) | Nota | Categoría
+  if (!rows.length) return [];
+  const body = rows.slice(1);
+  return body
+    .filter(r => r.length >= 7 && r[6] && !isNaN(parseFloat(r[6])))
+    .map(r => ({
+      date: parseFechaTransaccion(r[1]) || new Date(r[0]),
+      person: (r[3] || "").trim(),
+      bank: (r[4] || "").trim(),
+      type: (r[5] || "Débito").trim(),
+      amount: parseFloat(r[6]),
+      note: (r[7] || "").trim(),
+      category: (r[8] || "").trim(),
+    }))
+    .filter(e => e.person && e.bank);
+}
+
+/* ======================= CARGA DE DATOS ======================= */
+async function loadExpenses(showSpinner) {
+  const btn = document.getElementById("refresh-btn");
+  if (btn && showSpinner) btn.classList.add("spinning");
+  try {
+    const res = await fetch(SHEET_CSV_URL + "&cachebust=" + Date.now());
+    if (!res.ok) throw new Error("No se pudo leer la hoja");
+    const text = await res.text();
+    const rows = parseCSV(text);
+    expenses = rowsToExpenses(rows).sort((a, b) => b.date - a.date);
+    lastUpdated = new Date();
+    render();
+  } catch (err) {
+    document.getElementById("app").innerHTML =
+      `<div class="error-box">No se pudo conectar con la hoja de gastos.<br>Revisa tu conexión e intenta de nuevo.</div>`;
+    console.error(err);
+  } finally {
+    if (btn) setTimeout(() => btn.classList.remove("spinning"), 400);
+  }
+}
+
+/* ======================= RENDER ======================= */
+function render() {
+  // Solo Débitos cuentan como "gasto"; los Créditos (como el sueldo) se muestran aparte, no se restan del saldo mostrado.
+  const filtered = (currentView === "shared" ? expenses : expenses.filter(e => e.person === currentView))
+    .filter(e => currentView === "shared" || (PERSON_BANKS[currentView] || []).includes(normBank(e.bank)));
+
+  const gastos = filtered.filter(e => e.type !== "Crédito");
+  const ingresos = filtered.filter(e => e.type === "Crédito");
+
+  const totals = { BISA: 0, "Unión": 0 };
+  gastos.forEach(e => {
+    const key = normBank(e.bank);
+    if (totals[key] === undefined) totals[key] = 0;
+    totals[key] += e.amount;
+  });
+  const grandTotal = gastos.reduce((s, e) => s + e.amount, 0);
+  const grandIngresos = ingresos.reduce((s, e) => s + e.amount, 0);
+
+  const byCat = {};
+  gastos.forEach(e => {
+    const cat = e.category || "Sin categoría";
+    byCat[cat] = (byCat[cat] || 0) + e.amount;
+  });
+  const catEntries = Object.entries(byCat).sort((a, b) => b[1] - a[1]);
+  const maxCat = catEntries.length ? catEntries[0][1] : 1;
+
+  const bancosVisibles = currentView === "shared" ? ["BISA", "Unión"] : (PERSON_BANKS[currentView] || []);
+
+  const app = document.getElementById("app");
+  app.innerHTML = `
+    <header>
+      <div><h1>Gasto Compartido</h1></div>
+      <button class="refresh-btn" id="refresh-btn" onclick="loadExpenses(true)">
+        ${refreshIcon()} Actualizar
+      </button>
+    </header>
+
+    <div class="sync-strip">
+      <div class="sync-pill"><span class="sync-dot"></span> Sincronizado con Gmail</div>
+      <span class="sync-updated">${lastUpdated ? "Actualizado " + lastUpdated.toLocaleTimeString('es-BO', {hour:'2-digit', minute:'2-digit'}) : ""}</span>
+    </div>
+
+    <div class="tabs">
+      <button class="tab-btn ${currentView === 'shared' ? 'active' : ''}" onclick="setView('shared')">${usersIcon()} Compartida</button>
+      ${PEOPLE.map(p => `
+        <button class="tab-btn person-${PERSON_CLASS[p]} ${currentView === p ? 'active' : ''}" onclick="setView('${p}')">${userIcon()} ${p}</button>
+      `).join("")}
+    </div>
+
+    <div class="total-strip">
+      <div>
+        <div class="label">${currentView === 'shared' ? 'Total gastado (los dos)' : 'Total gastado por ' + currentView}</div>
+        <div class="amount">${fmtBs(grandTotal)}</div>
+      </div>
+      ${grandIngresos > 0 ? `<div style="text-align:right"><div class="label">Ingresos</div><div class="amount" style="color:#6B9B7A;font-size:16px">+${fmtBs(grandIngresos)}</div></div>` : ""}
+    </div>
+
+    <div class="balance-row">
+      ${bancosVisibles.map(key => {
+        const meta = BANK_META[key];
+        const saldo = SALDOS_REALES[key] !== undefined ? SALDOS_REALES[key] : null;
+        return `
+        <div class="balance-card" style="border-color:${meta.color}33">
+          <div class="balance-top">
+            <span class="bank-dot" style="background:${meta.color}"></span>
+            <span class="bank-label">${meta.label}</span>
+          </div>
+          <div class="balance-amount">${saldo !== null ? fmtBs(saldo) : "—"}</div>
+          <div class="balance-sub">saldo actual${saldo !== null ? " · al " + SALDOS_FECHA : ""}</div>
+          <div class="balance-sub" style="margin-top:4px">gastado ${currentView === 'shared' ? '(todos)' : '(' + currentView + ')'}: <b>${fmtBs(totals[key] || 0)}</b></div>
+        </div>
+      `;}).join("")}
+    </div>
+
+    ${catEntries.length ? `
+    <div class="section">
+      <div class="section-title">Por categoría</div>
+      ${catEntries.map(([cat, amt]) => `
+        <div class="cat-row">
+          <div class="cat-label-row"><span>${cat}</span><span class="cat-amt">${fmtBs(amt)}</span></div>
+          <div class="cat-bar-bg"><div class="cat-bar-fill" style="width:${(amt / maxCat) * 100}%"></div></div>
+        </div>
+      `).join("")}
+    </div>` : ""}
+
+    <div class="section">
+      <div class="section-title">Movimientos (${filtered.length})</div>
+      ${filtered.length === 0 ? `
+        <div class="empty">Sin movimientos todavía.<br>Aparecerán aquí automáticamente cuando llegue una notificación de pago QR.</div>
+      ` : `
+        <div class="list">${filtered.map(e => rowHtml(e)).join("")}</div>
+      `}
+    </div>
+
+    <div class="footer-note">Los movimientos se sincronizan desde Gmail cada pocos minutos.<br>Los saldos de cuenta se actualizan manualmente. Toca "Actualizar" para ver lo más reciente.</div>
+  `;
+}
+
+function normBank(b) { return b === "Union" ? "Unión" : b; }
+
+function rowHtml(e) {
+  const bankKey = normBank(e.bank);
+  const meta = BANK_META[bankKey] || { label: e.bank, color: "#8B8578" };
+  const personClass = PERSON_CLASS[e.person] || "";
+  const pillClass = personClass ? `pill-${personClass}` : "pill-muted";
+  const esCredito = e.type === "Crédito";
+  return `
+    <div class="row">
+      <div class="row-icon ${esCredito ? 'credito' : ''}" style="background:${meta.color}22;color:${meta.color}">↓</div>
+      <div class="row-main">
+        <div class="row-top">
+          <span class="row-note">${escapeHtml(e.note || e.category || "Movimiento QR")}</span>
+          <span class="row-amount ${esCredito ? 'credito' : ''}">${esCredito ? '+' : '-'}${fmtBs(e.amount)}</span>
+        </div>
+        <div class="row-bottom">
+          <span class="pill ${pillClass}">${escapeHtml(e.person)}</span>
+          <span class="pill-muted">${meta.label}</span>
+          ${e.category ? `<span class="pill-muted">${escapeHtml(e.category)}</span>` : ""}
+          <span class="row-date">${fmtDate(e.date)}</span>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+function setView(v) { currentView = v; render(); }
+
+function refreshIcon() {
+  return `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"></path></svg>`;
+}
+function usersIcon() {
+  return `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>`;
+}
+function userIcon() {
+  return `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`;
+}
+
+/* ======================= INICIO ======================= */
+loadExpenses(false);
+setInterval(() => loadExpenses(false), 60000);
+</script>
+</body>
+</html>
