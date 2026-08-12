@@ -29,19 +29,38 @@
     padding: 20px 16px 60px;
   }
 
+  .section-tabs {
+    display: flex;
+    gap: 4px;
+    background: #12160F;
+    border: 1px solid #22261F;
+    border-radius: 12px;
+    padding: 4px;
+    margin-bottom: 18px;
+  }
+  .section-tab {
+    flex: 1;
+    padding: 9px 0;
+    border-radius: 9px;
+    border: none;
+    background: transparent;
+    color: #8B8578;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .section-tab.active {
+    background: #1E2418;
+    color: #C9A876;
+  }
+
   header {
     display: flex;
     justify-content: space-between;
     align-items: flex-end;
     margin-bottom: 18px;
     gap: 12px;
-  }
-  .eyebrow {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 11px;
-    letter-spacing: 0.12em;
-    color: #6B9B7A;
-    margin-bottom: 4px;
   }
   h1 {
     font-family: 'Fraunces', serif;
@@ -203,6 +222,75 @@
   .pill-muted { font-size: 10.5px; padding: 2px 8px; border-radius: 999px; border: 1px solid #2A2E28; color: #6B6A5F; }
   .row-date { font-size: 10.5px; color: #565549; margin-left: auto; }
 
+  .tc-box {
+    background: #171B16;
+    border: 1px solid #2A2E28;
+    border-radius: 14px;
+    padding: 14px 16px;
+    margin-bottom: 18px;
+  }
+  .tc-box label {
+    display: block;
+    font-size: 11.5px;
+    color: #8B8578;
+    margin-bottom: 8px;
+    font-weight: 500;
+  }
+  .tc-box input {
+    width: 100%;
+    background: #0F1310;
+    border: 1px solid #2A2E28;
+    border-radius: 10px;
+    padding: 10px 12px;
+    color: #C9A876;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 16px;
+    font-weight: 500;
+  }
+
+  .patrimonio-row {
+    background: #171B16;
+    border: 1px solid #22261F;
+    border-radius: 12px;
+    padding: 12px;
+  }
+  .patrimonio-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    font-size: 13px;
+    color: #E8E4D9;
+  }
+  .patrimonio-usd {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: #6B9B7A;
+  }
+  .patrimonio-input-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .patrimonio-input-row input {
+    flex: 1;
+    background: #0F1310;
+    border: 1px solid #2A2E28;
+    border-radius: 8px;
+    padding: 8px 10px;
+    color: #E8E4D9;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13.5px;
+  }
+  .moneda-tag {
+    font-size: 11px;
+    color: #6B6A5F;
+    padding: 4px 8px;
+    border: 1px solid #2A2E28;
+    border-radius: 6px;
+    flex-shrink: 0;
+  }
+
   .footer-note {
     text-align: center;
     font-size: 11px;
@@ -239,12 +327,50 @@ const BANK_META = {
   "Unión": { label: "Banco Unión", color: "#F2A900" },
   "Union": { label: "Banco Unión", color: "#F2A900" },
 };
-const PEOPLE = ["Álvaro", "Camila"];
-const PERSON_CLASS = { "Álvaro": "alvaro", "Camila": "camila" };
-const PERSON_COLOR = { "Álvaro": "#4FD1C5", "Camila": "#F472B6" };
+const PEOPLE = ["Andre", "Camila"];
+const PERSON_CLASS = { "Andre": "alvaro", "Camila": "camila" };
+const PERSON_COLOR = { "Andre": "#4FD1C5", "Camila": "#F472B6" };
+// Camila solo opera con Banco Unión — sus movimientos con otro banco no deberían existir,
+// pero por si acaso, esto se usa para filtrar qué bancos se muestran en su vista.
+const PERSON_BANKS = { "Andre": ["BISA", "Unión"], "Camila": ["Unión"] };
 
 let currentView = "shared";
+let currentSection = "gastos"; // "gastos" | "patrimonio"
 let expenses = [];
+
+/* ======================= PATRIMONIO (ahorros totales) ======================= */
+const PATRIMONIO_DEFAULT = {
+  tipoCambio: 11.71, // Bs por 1 USD, editable a diario
+  items: [
+    { id: "cop", label: "Pesos colombianos (físico)", moneda: "COP", monto: 127000, tasaUsd: 3137.03 },
+    { id: "ars", label: "Pesos argentinos (físico)", moneda: "ARS", monto: 750, tasaUsd: 1490.95 },
+    { id: "brl", label: "Reales brasileños (físico)", moneda: "BRL", monto: 239, tasaUsd: 5.1495 },
+    { id: "bob_fisico", label: "Bolivianos (físico)", moneda: "BOB", monto: 2000, tasaUsd: null },
+    { id: "usd_fisico", label: "Dólares (físico)", moneda: "USD", monto: 901, tasaUsd: 1 },
+    { id: "usd_dig1", label: "Dólares — billetera digital 1", moneda: "USD", monto: 802.61, tasaUsd: 1 },
+    { id: "usd_dig2", label: "Dólares — billetera digital 2", moneda: "USD", monto: 131.04, tasaUsd: 1 },
+    { id: "bob_digital", label: "Bolivianos — billetera digital", moneda: "BOB", monto: 5721.57, tasaUsd: null },
+  ],
+};
+
+function loadPatrimonio() {
+  try {
+    const raw = localStorage.getItem("patrimonio_data");
+    if (raw) return JSON.parse(raw);
+  } catch (e) {}
+  return JSON.parse(JSON.stringify(PATRIMONIO_DEFAULT));
+}
+function savePatrimonio(data) {
+  localStorage.setItem("patrimonio_data", JSON.stringify(data));
+}
+let patrimonio = loadPatrimonio();
+
+function itemToUsd(item, tipoCambioBob) {
+  if (item.moneda === "USD") return item.monto;
+  if (item.moneda === "BOB") return item.monto / tipoCambioBob;
+  if (item.tasaUsd) return item.monto / item.tasaUsd;
+  return 0;
+}
 
 /* ======================= UTILIDADES ======================= */
 function fmtBs(n) {
@@ -327,6 +453,8 @@ async function loadExpenses(showSpinner) {
 
 /* ======================= RENDER ======================= */
 function render() {
+  if (currentSection === "patrimonio") { renderPatrimonio(); return; }
+
   const filtered = currentView === "shared" ? expenses : expenses.filter(e => e.person === currentView);
 
   const totals = { BISA: 0, "Unión": 0 };
@@ -347,9 +475,13 @@ function render() {
 
   const app = document.getElementById("app");
   app.innerHTML = `
+    <div class="section-tabs">
+      <button class="section-tab ${currentSection === 'gastos' ? 'active' : ''}" onclick="setSection('gastos')">Gastos</button>
+      <button class="section-tab ${currentSection === 'patrimonio' ? 'active' : ''}" onclick="setSection('patrimonio')">Patrimonio</button>
+    </div>
+
     <header>
       <div>
-        <div class="eyebrow">QR · BOLIVIA</div>
         <h1>Gasto Compartido</h1>
       </div>
       <button class="refresh-btn" id="refresh-btn" onclick="loadExpenses(true)">
@@ -376,7 +508,10 @@ function render() {
     </div>
 
     <div class="balance-row">
-      ${Object.entries(BANK_META).filter((v, i, arr) => arr.findIndex(x => x[1].label === v[1].label) === i).map(([key, meta]) => `
+      ${Object.entries(BANK_META)
+        .filter((v, i, arr) => arr.findIndex(x => x[1].label === v[1].label) === i)
+        .filter(([key]) => currentView === 'shared' || (PERSON_BANKS[currentView] || []).includes(key))
+        .map(([key, meta]) => `
         <div class="balance-card" style="border-color:${meta.color}33">
           <div class="balance-top">
             <span class="bank-dot" style="background:${meta.color}"></span>
@@ -448,6 +583,83 @@ function escapeHtml(s) {
 function setView(v) {
   currentView = v;
   render();
+}
+
+function setSection(s) {
+  currentSection = s;
+  render();
+}
+
+function updateTipoCambio(val) {
+  const n = parseFloat(val);
+  if (!isNaN(n) && n > 0) {
+    patrimonio.tipoCambio = n;
+    savePatrimonio(patrimonio);
+    renderPatrimonio();
+  }
+}
+
+function updateItemMonto(id, val) {
+  const n = parseFloat(val);
+  const item = patrimonio.items.find(i => i.id === id);
+  if (item) {
+    item.monto = isNaN(n) ? 0 : n;
+    savePatrimonio(patrimonio);
+    renderPatrimonio();
+  }
+}
+
+function renderPatrimonio() {
+  const app = document.getElementById("app");
+  const tc = patrimonio.tipoCambio;
+
+  const itemsConUsd = patrimonio.items.map(item => ({ ...item, usd: itemToUsd(item, tc) }));
+  const totalUsd = itemsConUsd.reduce((s, i) => s + i.usd, 0);
+  const totalBob = totalUsd * tc;
+
+  app.innerHTML = `
+    <div class="section-tabs">
+      <button class="section-tab" onclick="setSection('gastos')">Gastos</button>
+      <button class="section-tab active" onclick="setSection('patrimonio')">Patrimonio</button>
+    </div>
+
+    <header>
+      <div><h1>Patrimonio Total</h1></div>
+    </header>
+
+    <div class="tc-box">
+      <label for="tc-input">Tipo de cambio de hoy (Bs por 1 USD)</label>
+      <input id="tc-input" type="number" step="0.01" value="${tc}"
+        onchange="updateTipoCambio(this.value)" inputmode="decimal" />
+    </div>
+
+    <div class="total-strip" style="flex-direction:column;align-items:flex-start;gap:2px">
+      <div class="label">Total de ahorros</div>
+      <div class="amount">$${totalUsd.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})} USD</div>
+      <div class="balance-sub" style="margin-top:2px">≈ ${fmtBs(totalBob)}</div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Desglose (editable)</div>
+      <div class="list">
+        ${itemsConUsd.map(item => `
+          <div class="patrimonio-row">
+            <div class="patrimonio-label">
+              <span>${escapeHtml(item.label)}</span>
+              <span class="patrimonio-usd">≈ $${item.usd.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})}</span>
+            </div>
+            <div class="patrimonio-input-row">
+              <input type="number" step="0.01" value="${item.monto}"
+                onchange="updateItemMonto('${item.id}', this.value)" inputmode="decimal" />
+              <span class="moneda-tag">${item.moneda}</span>
+            </div>
+          </div>
+        `).join("")}
+      </div>
+    </div>
+
+    <div class="footer-note">Edita cualquier monto o el tipo de cambio cuando quieras — se guarda automáticamente en este dispositivo.</div>
+  `;
 }
 
 function refreshIcon() {
